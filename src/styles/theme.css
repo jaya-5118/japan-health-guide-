@@ -1,0 +1,762 @@
+/* ============================================================
+   MediConnect Japan — 3D Glassmorphism Japanese Theme
+   Premium elderly-care UI with depth, warmth & cultural identity
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ── Design Tokens ───────────────────────────────────────────── */
+:root {
+  --primary: #E8637A;
+  --primary-hover: #D14D65;
+  --primary-light: #FDE8EC;
+  --primary-dark: #B83A52;
+  --accent-indigo: #4F46B8;
+  --accent-gold: #D4A853;
+
+  --success: #2E9E5E;
+  --success-light: #E6F7ED;
+  --warning: #E5933A;
+  --warning-light: #FFF4E3;
+  --error: #DC3545;
+  --error-light: #FDEAEC;
+  --critical-pulse: rgba(220, 53, 69, 0.45);
+
+  --status-green: #1B8A4A;
+  --status-green-bg: #E6F7ED;
+  --status-yellow: #C77B18;
+  --status-yellow-bg: #FFF8E8;
+  --status-orange: #D4692E;
+  --status-orange-bg: #FFF1E6;
+  --status-red: #B52A37;
+  --status-red-bg: #FDE6E9;
+
+  /* Glass surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.22);
+  --glass-bg-strong: rgba(255, 255, 255, 0.42);
+  --glass-border: rgba(255, 255, 255, 0.35);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-subtle: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.25);
+  --border-focus: var(--primary);
+
+  --text-main: #1A1A2E;
+  --text-secondary: #3D3D5C;
+  --text-muted: #6B6B8D;
+  --text-white: #FFFFFF;
+  --text-on-glass: #1A1A2E;
+
+  /* Shadows with depth */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.18);
+  --shadow-glow-pink: 0 4px 20px rgba(232, 99, 122, 0.35);
+  --shadow-glow-indigo: 0 4px 20px rgba(79, 70, 184, 0.3);
+
+  /* Typography */
+  --font-family: 'Inter', 'Noto Serif JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Noto Serif JP', serif;
+  --font-h1: 34px;
+  --font-h2: 24px;
+  --font-h3: 20px;
+  --font-body: 15px;
+  --font-small: 13px;
+  --font-tiny: 11px;
+  --line-height: 1.65;
+
+  /* Touch / Accessibility */
+  --btn-height: 52px;
+  --input-height: 48px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+}
+
+/* ── Reset ────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Body — Fixed Japanese Wallpaper ─────────────────────────── */
+body {
+  font-family: var(--font-family);
+  color: var(--text-main);
+  line-height: var(--line-height);
+  font-size: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  background: #1a1a2e;
+  overflow-x: hidden;
+}
+
+/* Full-screen wallpaper layer (fixed, behind everything) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url('/src/assets/japan-bg.jpg') center / cover no-repeat;
+  z-index: -2;
+}
+
+/* Semi-transparent overlay for contrast */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(26, 26, 46, 0.55) 0%,
+    rgba(79, 70, 184, 0.25) 40%,
+    rgba(232, 99, 122, 0.18) 100%
+  );
+  z-index: -1;
+}
+
+/* ── App Container ────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Floating Sakura Petals (CSS only) ────────────────────────── */
+.sakura-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.sakura-petal {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(ellipse, rgba(255,183,197,0.8), rgba(255,183,197,0.1));
+  border-radius: 50% 0 50% 0;
+  animation: sakuraFall linear infinite;
+  opacity: 0;
+}
+
+.sakura-petal:nth-child(1)  { left: 5%;  animation-duration: 12s; animation-delay: 0s; }
+.sakura-petal:nth-child(2)  { left: 15%; animation-duration: 15s; animation-delay: 2s; width: 8px; height: 8px; }
+.sakura-petal:nth-child(3)  { left: 25%; animation-duration: 10s; animation-delay: 4s; }
+.sakura-petal:nth-child(4)  { left: 40%; animation-duration: 14s; animation-delay: 1s; width: 10px; height: 10px; }
+.sakura-petal:nth-child(5)  { left: 55%; animation-duration: 11s; animation-delay: 3s; }
+.sakura-petal:nth-child(6)  { left: 65%; animation-duration: 16s; animation-delay: 5s; width: 9px; height: 9px; }
+.sakura-petal:nth-child(7)  { left: 75%; animation-duration: 13s; animation-delay: 0.5s; }
+.sakura-petal:nth-child(8)  { left: 85%; animation-duration: 12s; animation-delay: 6s; width: 7px; height: 7px; }
+.sakura-petal:nth-child(9)  { left: 92%; animation-duration: 14s; animation-delay: 2.5s; }
+.sakura-petal:nth-child(10) { left: 50%; animation-duration: 18s; animation-delay: 7s; width: 14px; height: 14px; }
+
+@keyframes sakuraFall {
+  0% {
+    transform: translateY(-20px) rotate(0deg) translateX(0);
+    opacity: 0;
+  }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.5; }
+  100% {
+    transform: translateY(100vh) rotate(720deg) translateX(80px);
+    opacity: 0;
+  }
+}
+
+/* ── Hero Header (remove old ugly one) ────────────────────────── */
+.hero-header {
+  display: none;
+}
+
+/* ── Top Navigation Bar ───────────────────────────────────────── */
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: rgba(26, 26, 46, 0.65);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, var(--primary), var(--accent-indigo));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 18px;
+  color: white;
+  box-shadow: var(--shadow-glow-pink);
+  transform: perspective(200px) rotateY(-5deg);
+  transition: transform 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: perspective(200px) rotateY(5deg) scale(1.05);
+}
+
+.brand-text h1 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+}
+
+.brand-subtitle {
+  font-size: var(--font-tiny);
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Role Selector Pills ──────────────────────────────────────── */
+.role-bar {
+  display: flex;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.role-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.role-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.role-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent-indigo));
+  color: #FFFFFF;
+  box-shadow: var(--shadow-glow-pink);
+}
+
+/* ── Header Action Buttons ────────────────────────────────────── */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-demo {
+  background: linear-gradient(135deg, var(--accent-indigo), #7C3AED);
+  color: white;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-glow-indigo);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-demo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(79, 70, 184, 0.5);
+}
+
+.btn-ghost-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+}
+
+.btn-ghost-pill:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFF;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Main Content Area ────────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 32px 24px 80px;
+}
+
+/* ── Screen Sub-Tabs ──────────────────────────────────────────── */
+.screen-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  scrollbar-width: thin;
+}
+
+.screen-tab {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  color: var(--text-white);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  transform: perspective(600px) rotateX(1deg);
+}
+
+.screen-tab:hover {
+  background: var(--glass-bg-strong);
+  transform: perspective(600px) rotateX(0deg) translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.screen-tab.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent-indigo));
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: var(--shadow-glow-pink);
+  transform: perspective(600px) rotateX(0deg) translateY(-3px);
+}
+
+/* ── Glassmorphism 3D Cards ───────────────────────────────────── */
+.elderly-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.35s ease;
+  transform: perspective(1000px) rotateX(1deg) rotateY(0.5deg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle gradient shimmer on cards */
+.elderly-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--accent-indigo), var(--accent-gold));
+  opacity: 0.6;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.elderly-card:hover {
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(-6px) translateZ(10px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* ── Voice Hero Bar ───────────────────────────────────────────── */
+.voice-hero-bar {
+  background: rgba(26, 26, 46, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* ── Big Action Touch Buttons ─────────────────────────────────── */
+.btn-touch-primary {
+  height: var(--btn-height);
+  min-height: 52px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0 24px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: var(--shadow-glow-pink);
+  transition: all 0.25s ease;
+  transform: perspective(400px) rotateX(1deg);
+}
+
+.btn-touch-primary:hover {
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary));
+  transform: perspective(400px) rotateX(0deg) translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 28px rgba(232, 99, 122, 0.45);
+}
+
+.btn-touch-primary:active {
+  transform: scale(0.97);
+}
+
+/* ── Emergency SOS Button ─────────────────────────────────────── */
+.btn-sos {
+  background: linear-gradient(135deg, #E53935, #B71C1C);
+  color: #FFFFFF;
+  height: 64px;
+  border-radius: 18px;
+  font-size: 20px;
+  font-weight: 800;
+  border: none;
+  padding: 0 32px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 6px 24px rgba(229, 57, 53, 0.45);
+  animation: urgent-pulse 1.8s infinite;
+  transform: perspective(400px) rotateX(2deg);
+}
+
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.6); }
+  50%      { box-shadow: 0 0 0 16px rgba(229, 57, 53, 0); }
+}
+
+.btn-sos:hover {
+  background: linear-gradient(135deg, #C62828, #8B0000);
+  transform: perspective(400px) rotateX(0deg) scale(1.03);
+}
+
+/* ── Alert Notification Banners ───────────────────────────────── */
+.alert-banner {
+  padding: 18px 22px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  border-left: 5px solid var(--primary);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-size: 14px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.alert-banner.critical {
+  background: rgba(253, 234, 236, 0.85);
+  border-color: var(--error);
+  color: #7F1D1D;
+}
+
+.alert-banner.warning {
+  background: rgba(255, 244, 227, 0.85);
+  border-color: var(--warning);
+  color: #7C2D12;
+}
+
+.alert-banner.success {
+  background: rgba(230, 247, 237, 0.85);
+  border-color: var(--success);
+  color: #14532D;
+}
+
+/* ── Status Badges ────────────────────────────────────────────── */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
+}
+
+.status-pill.green {
+  background: rgba(230, 247, 237, 0.9);
+  color: var(--status-green);
+  border: 1px solid rgba(46, 158, 94, 0.3);
+}
+
+.status-pill.yellow {
+  background: rgba(255, 248, 232, 0.9);
+  color: var(--status-yellow);
+  border: 1px solid rgba(199, 123, 24, 0.3);
+}
+
+.status-pill.red {
+  background: rgba(253, 230, 233, 0.9);
+  color: var(--status-red);
+  border: 1px solid rgba(181, 42, 55, 0.3);
+}
+
+/* ── Grid Utilities ───────────────────────────────────────────── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* ── Modal Overlay ────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-dialog {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  max-width: 860px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  transform: perspective(800px) rotateX(1deg);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-body {
+  padding: 24px;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: rgba(248, 250, 252, 0.8);
+}
+
+/* ── Telehealth Video ─────────────────────────────────────────── */
+.video-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  color: white;
+  min-height: 420px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.main-stream {
+  position: relative;
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sub-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.self-cam {
+  height: 140px;
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--primary);
+}
+
+.subtitles-box {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* ── Form Styles ──────────────────────────────────────────────── */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  height: var(--input-height);
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(232, 99, 122, 0.2);
+}
+
+/* ── Animations ───────────────────────────────────────────────── */
+.fade-in {
+  animation: fadeSlideIn 0.4s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 184, 0.4); }
+  50%      { box-shadow: 0 0 0 10px rgba(79, 70, 184, 0); }
+}
+
+/* ── Mic Pulse Button ─────────────────────────────────────────── */
+.mic-pulse-btn {
+  animation: micPulse 2s ease-in-out infinite;
+}
+
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+  50%      { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .top-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .role-bar {
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+  .header-actions {
+    justify-content: center;
+  }
+  .video-grid {
+    grid-template-columns: 1fr;
+  }
+  .self-cam {
+    height: 100px;
+  }
+  .main-content {
+    padding: 20px 14px 60px;
+  }
+}
