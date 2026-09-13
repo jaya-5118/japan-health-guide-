@@ -54,10 +54,15 @@ export function renderNavbar(activeRole, isAudioMuted = false) {
           <span>Demo Scenarios (1-5)</span>
         </button>
 
-        <button class="btn-ghost-pill" id="btn-open-db-inspector" title="Inspect all 12 database collections">
+        <button class="btn-ghost-pill" id="btn-open-db-inspector" title="Inspect all 15 database collections">
           <span></span>
-          <span>12 Collections</span>
+          <span>15 Collections</span>
         </button>
+
+        <a href="/MediConnect_Japan_Documentation.pdf" download="MediConnect_Japan_Documentation.pdf" class="btn-ghost-pill" style="text-decoration: none; display: flex; align-items: center;" title="Download Comprehensive Project Documentation PDF">
+          <span></span>
+          <span>PDF Guide</span>
+        </a>
 
         <button class="btn-ghost-pill" id="btn-toggle-audio-mute" title="Toggle Sound & Speech">
           <span>${isAudioMuted ? "🔇" : "🔊"}</span>
