@@ -112,16 +112,17 @@ function renderSeniorHomeScreen(pat, allMorningTaken, latestBp, voiceFeedback) {
             <div class="voice-status-label">
               ${
                 voiceFeedback.state === "listening"
-                  ? "🎤 Listening... (音声を聞き取り中)"
+                  ? "🎤 Listening... ／ 話しかけてください..."
                   : voiceFeedback.state === "heard"
                   ? `🗣 I heard: "${voiceFeedback.heardText}"`
                   : voiceFeedback.state === "confirmed"
                   ? `✅ ${voiceFeedback.actionText || "Action confirmed"}`
-                  : "Tap the big microphone or speak anytime"
+                  : "Tap the big microphone and speak in Japanese or English"
               }
             </div>
             <div class="voice-hint-text">
-              Try saying: <strong>"Did I take my medicine?"</strong>, <strong>"Show my blood pressure"</strong>, or <strong>"I feel chest pain"</strong>
+              日本語でどうぞ: <strong>「薬を飲みました」「血圧を教えて」「胸が痛い」</strong><br>
+              English: <strong>"Medicine"</strong>, <strong>"Blood pressure"</strong>, or <strong>"Emergency"</strong>
             </div>
           </div>
         </div>
@@ -129,19 +130,19 @@ function renderSeniorHomeScreen(pat, allMorningTaken, latestBp, voiceFeedback) {
         <!-- 1-Click Interactive Demo Commands (For Judges & Presenters) -->
         <div class="senior-voice-quick-pills">
           <button class="voice-quick-chip" data-speak-cmd="did_i_take_meds">
-            <span>🗣 "Did I take my medicine?"</span>
+            <span>🗣 「薬を飲みましたか？」</span>
           </button>
           <button class="voice-quick-chip" data-speak-cmd="i_took_medicine">
-            <span>🗣 "I took my medicine"</span>
+            <span>🗣 「薬を飲みました」</span>
           </button>
           <button class="voice-quick-chip" data-speak-cmd="show_bp">
-            <span>🗣 "Show my blood pressure"</span>
+            <span>🗣 「血圧を教えて」</span>
           </button>
           <button class="voice-quick-chip chip-emergency" data-speak-cmd="chest_pain">
-            <span>🚨 "I feel chest pain"</span>
+            <span>🚨 「胸が痛い」</span>
           </button>
           <button class="voice-quick-chip" data-speak-cmd="call_caregiver">
-            <span>📞 "Call my caregiver"</span>
+            <span>📞 「由紀を呼んで」</span>
           </button>
         </div>
       </div>

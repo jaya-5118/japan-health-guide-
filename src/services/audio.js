@@ -119,7 +119,7 @@ class SoundService {
     }
   }
 
-  speak(text, lang = "en-US") {
+  speak(text, lang = "ja-JP") {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     try {
       this.lastSpokenText = text;
@@ -127,8 +127,9 @@ class SoundService {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
-      utterance.rate = 0.92; // deliberate, gentle tempo for elderly clarity
+      utterance.rate = 0.85; // slower, deliberate pace for elderly clarity
       utterance.pitch = 1.0;
+      utterance.volume = 1.0;
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.warn("Speech synthesis error:", e);
@@ -144,7 +145,8 @@ class SoundService {
   }
 
   // --- Voice Input / Speech Recognition Engine ---
-  startSpeechRecognition(onResult, onStatusChange) {
+  // lang: 'ja-JP' (default for elderly Japanese users), 'en-US', 'en-JP' (bilingual)
+  startSpeechRecognition(onResult, onStatusChange, lang = "ja-JP") {
     const SpeechRecognition = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
     if (!SpeechRecognition) {
       console.warn("Speech recognition not natively supported in this browser environment.");
@@ -155,30 +157,47 @@ class SoundService {
     try {
       if (this.activeRecognition) {
         this.activeRecognition.abort();
+        this.activeRecognition = null;
       }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = "en-US";
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+      // ja-JP = Japanese speech recognition for elderly users
+      // Falls back to accepting any language if the browser doesn't support
+      recognition.lang = lang;
+      recognition.interimResults = false; // final results only for stability
+      recognition.maxAlternatives = 3;    // get up to 3 alternatives for better Japanese matching
+      recognition.continuous = false;     // single-shot per tap, less confusing for elderly
 
       recognition.onstart = () => {
         this.isRecognizing = true;
         if (onStatusChange) onStatusChange("listening");
+        console.log(`🎤 Speech recognition started (lang: ${lang})`);
       };
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        if (onResult) onResult(transcript);
+        // Collect all alternatives and pick the best one
+        const results = event.results[0];
+        let bestTranscript = results[0].transcript;
+        let bestConfidence = results[0].confidence;
+        for (let i = 1; i < results.length; i++) {
+          if (results[i].confidence > bestConfidence) {
+            bestTranscript = results[i].transcript;
+            bestConfidence = results[i].confidence;
+          }
+        }
+        console.log(`🗣 Recognized (${lang}): "${bestTranscript}" (confidence: ${(bestConfidence * 100).toFixed(1)}%)`);
+        if (onResult) onResult(bestTranscript);
       };
 
       recognition.onerror = (event) => {
         console.warn("Speech recognition error:", event.error);
         if (onStatusChange) onStatusChange("error", event.error);
+        // If Japanese fails, do NOT auto-retry to avoid confusing the user
       };
 
       recognition.onend = () => {
         this.isRecognizing = false;
+        this.activeRecognition = null;
         if (onStatusChange) onStatusChange("idle");
       };
 

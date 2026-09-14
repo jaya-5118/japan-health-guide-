@@ -95,7 +95,7 @@ function renderApp() {
   attachEventListeners();
 }
 
-// Voice Command Intent Engine for Senior Mode
+// Voice Command Intent Engine for Senior Mode (Bilingual: Japanese + English)
 function handleSeniorVoiceCommand(rawTranscript) {
   if (!rawTranscript) return;
   const text = rawTranscript.trim();
@@ -110,8 +110,14 @@ function handleSeniorVoiceCommand(rawTranscript) {
   renderApp();
 
   setTimeout(() => {
-    // 1. "Did I take my medicine?"
-    if (lower.includes("did i take") || lower.includes("have i taken") || lower.includes("medication status") || lower.includes("did_i_take_meds")) {
+    // 1. "Did I take my medicine?" / 薬を飲みましたか？/ お薬
+    if (
+      lower.includes("did i take") || lower.includes("have i taken") ||
+      lower.includes("medication status") || lower.includes("did_i_take_meds") ||
+      lower.includes("薬") || lower.includes("くすり") || lower.includes("お薬") ||
+      lower.includes("飲みました") || lower.includes("のみました") ||
+      lower.includes("medicine")
+    ) {
       const meds = store.get("medications", (m) => m.patient_id === "pat_takeshi");
       const morningMeds = meds.filter((m) => m.times_per_day.includes("08:00"));
       const allTaken = morningMeds.length > 0 && morningMeds.every((m) => m.today_status === "taken");
@@ -123,7 +129,7 @@ function handleSeniorVoiceCommand(rawTranscript) {
           actionText: "Morning medicine is already recorded as taken."
         };
         soundService.playSuccessChime();
-        soundService.speak("Takeshi-san, your morning medicine is already recorded as taken. You are all set.", "en-US");
+        soundService.speak("健さん、今朝のお薬はもう記録されています。大丈夫ですよ。", "ja-JP");
       } else {
         appState.voiceFeedback = {
           state: "confirmed",
@@ -131,76 +137,117 @@ function handleSeniorVoiceCommand(rawTranscript) {
           actionText: "Morning medicine not recorded yet."
         };
         soundService.playReminderChime();
-        soundService.speak("You have not recorded your morning medicine yet. You have Amlodipine 5 milligrams and Metformin 500 milligrams scheduled.", "en-US");
+        soundService.speak("まだ今朝のお薬が記録されていません。アムロジピンとメトホルミンをお飲みください。", "ja-JP");
       }
       renderApp();
     }
-    // 2. "I took my medicine" / "I took it"
-    else if (lower.includes("took my medicine") || lower.includes("took it") || lower.includes("took medicine") || lower.includes("took pills") || lower.includes("i_took_medicine")) {
+    // 2. "I took my medicine" / 薬を飲みました / 飲んだ
+    else if (
+      lower.includes("took my medicine") || lower.includes("took it") ||
+      lower.includes("took medicine") || lower.includes("took pills") ||
+      lower.includes("i_took_medicine") ||
+      lower.includes("飲みました") || lower.includes("のみました") ||
+      lower.includes("飲んだ") || lower.includes("のんだ")
+    ) {
       store.update("medications", "med_amlodipine", { today_status: "taken", last_taken: new Date().toISOString() });
       store.update("medications", "med_metformin", { today_status: "taken", last_taken: new Date().toISOString() });
       appState.voiceFeedback = {
         state: "confirmed",
         heardText: text,
-        actionText: "Morning medicine recorded"
+        actionText: "Morning medicine recorded ✅"
       };
       soundService.playSuccessChime();
       confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-      soundService.speak("Your morning medicine has been recorded. Well done, Takeshi-san.", "en-US");
+      soundService.speak("今朝のお薬を記録しました。健さん、よくできました！", "ja-JP");
       renderApp();
     }
-    // 3. "Show my blood pressure" / "Read my health information"
-    else if (lower.includes("blood pressure") || lower.includes("bp") || lower.includes("my health") || lower.includes("vitals") || lower.includes("show_bp")) {
+    // 3. "Show my blood pressure" / 血圧 / けつあつ / 体調
+    else if (
+      lower.includes("blood pressure") || lower.includes("bp") ||
+      lower.includes("my health") || lower.includes("vitals") ||
+      lower.includes("show_bp") ||
+      lower.includes("血圧") || lower.includes("けつあつ") ||
+      lower.includes("体調") || lower.includes("たいちょう") ||
+      lower.includes("健康") || lower.includes("けんこう")
+    ) {
       appState.seniorScreen = "health";
       appState.voiceFeedback = {
         state: "confirmed",
         heardText: text,
-        actionText: "Showing Blood Pressure: 138/88 mmHg"
+        actionText: "血圧を表示しています: 138/88 mmHg"
       };
       renderApp();
       soundService.playSuccessChime();
-      soundService.speak("Takeshi-san, your latest blood pressure is 138 over 88 with pulse 72. That is in your safe target range.", "en-US");
+      soundService.speak("健さん、最新の血圧は138の88、脈拍72です。正常範囲内です。", "ja-JP");
     }
-    // 4. "I feel chest pain" / "Chest pain" / "Emergency" / "I feel dizzy"
-    else if (lower.includes("chest pain") || lower.includes("chest") || lower.includes("heart") || lower.includes("dizzy") || lower.includes("emergency") || lower.includes("need help")) {
+    // 4. Emergency / 胸が痛い / 救急 / 苦しい / 気分が悪い
+    else if (
+      lower.includes("chest pain") || lower.includes("chest") ||
+      lower.includes("heart") || lower.includes("dizzy") ||
+      lower.includes("emergency") || lower.includes("need help") ||
+      lower.includes("胸") || lower.includes("むね") ||
+      lower.includes("痛い") || lower.includes("いたい") ||
+      lower.includes("救急") || lower.includes("きゅうきゅう") ||
+      lower.includes("苦し") || lower.includes("くるし") ||
+      lower.includes("気分") || lower.includes("きぶん") ||
+      lower.includes("助けて") || lower.includes("たすけて")
+    ) {
       appState.seniorScreen = "emergency";
       appState.voiceFeedback = {
         state: "confirmed",
         heardText: text,
-        actionText: "Emergency detected: Chest pain reported"
+        actionText: "緊急事態を検出しました — Emergency detected"
       };
       renderApp();
       runWorkflowEmergencySymptomDetection("Severe chest pain and tightness");
     }
-    // 5. "Call my caregiver" / "Call Yuki"
-    else if (lower.includes("caregiver") || lower.includes("call yuki") || lower.includes("call_caregiver")) {
+    // 5. "Call my caregiver" / 介護者 / 娘 / 由紀
+    else if (
+      lower.includes("caregiver") || lower.includes("call yuki") ||
+      lower.includes("call_caregiver") ||
+      lower.includes("介護") || lower.includes("かいご") ||
+      lower.includes("由紀") || lower.includes("ゆき") ||
+      lower.includes("娘") || lower.includes("むすめ") ||
+      lower.includes("電話") || lower.includes("でんわ")
+    ) {
       soundService.playReminderChime();
-      soundService.speak("Connecting call to your daughter Yuki Sato in Hirosaki.", "en-US");
-      alert("📞 [CONNECTING CALL]\n\nCalling Primary Caregiver: Yuki Sato (+81 90-4412-9901)...");
+      soundService.speak("由紀さんへの電話を繋ぎます。少々お待ちください。", "ja-JP");
+      alert("📞 [CONNECTING CALL]\n\n介護者に電話中: 佐藤 由紀 (+81 90-4412-9901)...");
     }
-    // 6. "Repeat that"
-    else if (lower.includes("repeat") || lower.includes("again")) {
+    // 6. "Repeat that" / もう一度 / 繰り返して
+    else if (
+      lower.includes("repeat") || lower.includes("again") ||
+      lower.includes("もう一度") || lower.includes("もういちど") ||
+      lower.includes("繰り返") || lower.includes("くりかえ")
+    ) {
       soundService.repeatLastSpoken();
     }
-    // 7. "Go back" / "Back to home"
-    else if (lower.includes("back") || lower.includes("home")) {
+    // 7. "Go back" / 戻る / ホームへ
+    else if (
+      lower.includes("back") || lower.includes("home") ||
+      lower.includes("戻") || lower.includes("もど") ||
+      lower.includes("ホーム") || lower.includes("はじめ")
+    ) {
       appState.seniorScreen = "home";
       appState.voiceFeedback = {
         state: "confirmed",
         heardText: text,
-        actionText: "Returned to Senior Home Screen"
+        actionText: "ホーム画面に戻りました"
       };
       renderApp();
-      soundService.speak("Returned to home screen. How can I help you?", "en-US");
+      soundService.speak("ホーム画面に戻りました。何かお手伝いできますか？", "ja-JP");
     }
     else {
       appState.voiceFeedback = {
         state: "confirmed",
         heardText: text,
-        actionText: `Recognized: "${text}"`
+        actionText: `認識しました: "${text}"`
       };
       renderApp();
-      soundService.speak(`I heard: ${text}. You can say: 'Did I take my medicine?', 'Show my blood pressure', or 'I feel chest pain'.`, "en-US");
+      soundService.speak(
+        `${text}、と聞こえました。「薬を飲みました」「血圧を教えて」「胸が痛い」などと話しかけてください。`,
+        "ja-JP"
+      );
     }
   }, 350);
 }
@@ -308,13 +355,13 @@ function attachEventListeners() {
   if (btnSeniorReadScreen) {
     btnSeniorReadScreen.addEventListener("click", () => {
       if (appState.seniorScreen === "home") {
-        soundService.speak("Good morning, Takeshi. How can I help you today? You have four options: Medicine, My Health, Speak to Me, and Emergency.", "en-US");
+        soundService.speak("おはようございます、健さん。今日もお手伝いします。お薬、健康情報、通話、緊急の四つのボタンがあります。", "ja-JP");
       } else if (appState.seniorScreen === "medicine") {
-        soundService.speak("Your Medicine Screen. Amlodipine 5 milligrams for blood pressure, and Metformin 500 milligrams for blood sugar scheduled at 8 AM. Tap the big green button to confirm you took them.", "en-US");
+        soundService.speak("お薬の画面です。アムロジピン5ミリグラムと、メトホルミン500ミリグラムを朝8時に飲んでください。飲み終わったら緑のボタンを押してください。", "ja-JP");
       } else if (appState.seniorScreen === "health") {
-        soundService.speak("Your Health Information. Latest blood pressure is 138 over 88 with pulse 72. In target range. Caregiver Yuki Sato is on duty.", "en-US");
+        soundService.speak("健康情報の画面です。最新の血圧は138の88、脈拍72です。担当の田中先生からのメッセージがあります。水分補給と朝の散歩を続けてください。", "ja-JP");
       } else {
-        soundService.speak("Emergency Detected Screen. 119 emergency workflow prototype initiated. Caregiver Yuki Sato and Dr. Tanaka are notified.", "en-US");
+        soundService.speak("緊急事態の画面です。田中先生と由紀さんに連絡しました。救急隊員が来るまでゆっくり呼吸してください。", "ja-JP");
       }
     });
   }
@@ -330,7 +377,7 @@ function attachEventListeners() {
   const btnReadMedScreen = document.getElementById("btn-read-med-screen");
   if (btnReadMedScreen) {
     btnReadMedScreen.addEventListener("click", () => {
-      soundService.speak("Amlodipine 5 milligrams for blood pressure, and Metformin 500 milligrams for blood sugar. Please take with a glass of water.", "en-US");
+      soundService.speak("アムロジピン5ミリグラムは血圧のお薬です。メトホルミン500ミリグラムは血糖値のお薬です。水と一緒にお飲みください。", "ja-JP");
     });
   }
 
@@ -344,7 +391,7 @@ function attachEventListeners() {
   const btnSeniorSpeakMedInfo = document.getElementById("btn-senior-speak-med-info");
   if (btnSeniorSpeakMedInfo) {
     btnSeniorSpeakMedInfo.addEventListener("click", () => {
-      soundService.speak("Dosage schedule: Take 1 tablet of Amlodipine 5 milligrams and 1 tablet of Metformin 500 milligrams in the morning with water.", "en-US");
+      soundService.speak("服薬スケジュール: アムロジピン5ミリグラム1錠と、メトホルミン500ミリグラム1錠を朝食後に水と一緒に飲んでください。", "ja-JP");
     });
   }
 
@@ -352,14 +399,14 @@ function attachEventListeners() {
   const btnReadHealthScreen = document.getElementById("btn-read-health-screen");
   if (btnReadHealthScreen) {
     btnReadHealthScreen.addEventListener("click", () => {
-      soundService.speak("Blood pressure 138 over 88 mmHg. Pulse 72. Dr. Tanaka advises staying hydrated and enjoying your gentle morning walk.", "en-US");
+      soundService.speak("血圧138の88ミリメートル水銀柱。脈抈72。田中先生は水分をとりますように言っています。散歩を続けていきましょう。", "ja-JP");
     });
   }
 
   const btnSeniorReadBp = document.getElementById("btn-senior-read-bp-aloud");
   if (btnSeniorReadBp) {
     btnSeniorReadBp.addEventListener("click", () => {
-      soundService.speak("Your latest blood pressure is 138 over 88 with pulse 72. That is in your safe target range.", "en-US");
+      soundService.speak("最新の血圧は138の88、脈抈72です。正常範囲内です。", "ja-JP");
     });
   }
 
@@ -397,20 +444,26 @@ function attachEventListeners() {
       };
       renderApp();
 
+      // Use ja-JP for the hero mic - the primary use case is elderly Japanese speakers
       const recog = soundService.startSpeechRecognition(
         (transcript) => {
           handleSeniorVoiceCommand(transcript);
         },
-        (status) => {
-          if (status === "unsupported" || status === "error") {
-            // Friendly prompt if browser mic access is denied or unsupported
-            soundService.speak("I am listening. What can I do for you?", "en-US");
+        (status, errDetail) => {
+          if (status === "unsupported") {
+            soundService.speak("申し訳ございません。このブラウザは音声認識に対応していません。Chromeをお使いください。", "ja-JP");
+          } else if (status === "error") {
+            console.warn("Recognition error:", errDetail);
+            appState.voiceFeedback = { state: "idle", heardText: "", actionText: "" };
+            renderApp();
+            soundService.speak("聞こえませんでした。もう一度お話しください。", "ja-JP");
           }
-        }
+        },
+        "ja-JP" // Japanese speech recognition
       );
 
       if (!recog) {
-        soundService.speak("I am listening. What can I do for you?", "en-US");
+        soundService.speak("聞こえませんでした。もう一度お試しください。", "ja-JP");
       }
     });
   }
