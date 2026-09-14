@@ -11,6 +11,8 @@ import { renderDoctorView } from "./components/doctor/doctorScreens.js";
 import { renderAdminView } from "./components/admin/adminScreens.js";
 import { renderTouristView } from "./components/tourist/touristGuide.js";
 import { renderSeniorMode } from "./components/patient/seniorMode.js";
+import { renderRegistrationForm } from "./components/patient/RegistrationForm.js";
+import { renderPatientReportForm } from "./components/patient/PatientReportForm.js";
 import {
   renderDemoRunnerModal,
   executeScenario
@@ -74,17 +76,20 @@ function renderApp() {
 
     <main class="main-content">
       ${
-        currentRole === "patient"
-          ? (patientMode === "senior"
-              ? renderSeniorMode(seniorScreen, voiceFeedback)
-              : renderPatientView(currentTab))
-          : currentRole === "caregiver"
+        currentRole === "register" ? renderRegistrationForm() :
+        currentRole === "patient" ? (
+          appState.editPatient ? renderPatientReportForm(store.find("patients", store.currentUser?.id || "pat_takeshi")) :
+          (patientMode === "senior"
+            ? renderSeniorMode(seniorScreen, voiceFeedback)
+            : renderPatientView(currentTab))
+        )
+        : currentRole === "caregiver"
           ? renderCaregiverView(currentTab)
-          : currentRole === "doctor"
+        : currentRole === "doctor"
           ? renderDoctorView(currentTab)
-          : currentRole === "admin"
+        : currentRole === "admin"
           ? renderAdminView()
-          : renderTouristView(currentTab, touristState.filterCity, touristState.selectedLang)
+        : renderTouristView(currentTab, touristState.filterCity, touristState.selectedLang)
       }
     </main>
 
@@ -530,7 +535,40 @@ function attachEventListeners() {
       renderApp();
     });
   });
+  // Patient Edit Button (added in patient view)
+const btnEditPatient = document.getElementById("btn-edit-patient");
+if (btnEditPatient) {
+  btnEditPatient.addEventListener("click", () => {
+    appState.editPatient = true;
+    renderApp();
+  });
+}
 
+// Patient Report Form Submit Handling
+if (appState.currentRole === "patient" && appState.editPatient) {
+  const reportForm = document.getElementById("patient-report");
+  if (reportForm) {
+    reportForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const patient = store.find("patients", store.currentUser?.id || "pat_takeshi");
+      const updated = {
+        name: reportForm.name.value.trim(),
+        age: parseInt(reportForm.age.value, 10) || patient.age,
+        prefecture: reportForm.prefecture.value.trim(),
+        phone: reportForm.phone.value.trim(),
+        emergency_contact: reportForm.emergency_contact.value.trim(),
+        primary_caregiver_id: reportForm.primary_caregiver_id.value.trim(),
+        assigned_doctor_id: reportForm.assigned_doctor_id.value.trim()
+      };
+      store.update("patients", patient.id, updated);
+      appState.editPatient = false;
+      soundService.speak("患者情報が更新されました。", "ja-JP");
+      renderApp();
+    });
+  }
+}
+
+// Registration Form Submit Handling\n  if (appState.currentRole === \"register\") {\n    const regForm = document.getElementById(\"patient-registration\");\n    if (regForm) {\n      regForm.addEventListener(\"submit\", (e) => {\n        e.preventDefault();\n        const name = regForm.name.value.trim();\n        const age = parseInt(regForm.age.value, 10) || 0;\n        const prefecture = regForm.prefecture.value.trim();\n        const id = `pat_${Date.now()}`;\n        const newPatient = {\n          id,\n          name,\n          name_kanji: name,\n          age,\n          prefecture,\n          city: \"\",\n          address: \"\",\n          phone: \"\",\n          emergency_contact: \"\",\n          primary_caregiver_id: \"\",\n          assigned_doctor_id: \"\",\n          status: \"green\",\n          created_at: new Date().toISOString(),\n          updated_at: new Date().toISOString()\n        };\n        store.insert(\"patients\", newPatient);\n        // Switch to patient dashboard\n        appState.currentRole = \"patient\";\n        appState.patientMode = \"senior\";\n        store.setUser(\"patient\", id);\n        soundService.speak(\"Registration complete. Welcome, \" + name + \".\", \"en-US\");\n        renderApp();\n      });\n    }\n  }\n
   // 2. Patient Screen Tabs
   document.querySelectorAll("[data-patient-tab]").forEach((tab) => {
     tab.addEventListener("click", () => {

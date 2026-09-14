@@ -108,7 +108,7 @@ function renderHomeScreen(pat, meds, latestBp, takenMeds, totalMeds, alerts) {
         <div>
           <div style="font-size: 14px; color: var(--text-muted); font-weight: 600;">Good morning • おはようございます</div>
           <h2 style="font-size: 28px; font-weight: 800; color: var(--text-main); margin: 6px 0; font-family: var(--font-display);">
-            ${pat.name} (${pat.name_kanji})
+            ${pat.name} (${pat.name_kanji})<br/><button id="btn-edit-patient" class="btn-touch-primary" style="margin-top:8px;background:var(--accent-indigo);color:#fff;">Edit Profile</button>
           </h2>
           <div style="font-size: 14px; color: var(--text-secondary);">
             📍 ${pat.city}, ${pat.prefecture} • Primary Care: Dr. Hiroshi Tanaka (Rural Clinic)
