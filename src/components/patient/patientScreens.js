@@ -27,6 +27,16 @@ export function renderPatientView(activeTab = "home") {
 
   return `
     <div class="patient-wrapper">
+      <!-- Mode Switcher: Quick jump to Senior Mode -->
+      <div style="background: rgba(232, 99, 122, 0.2); border: 1.5px solid var(--primary); border-radius: var(--radius-full); padding: 8px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; backdrop-filter: blur(12px);">
+        <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #FFFFFF; font-size: 14px;">
+          <span>👵 Prefer larger text & voice?</span>
+        </div>
+        <button class="btn-senior-switch-standard" id="btn-switch-to-senior-mode" style="background: var(--primary); color: white; border: none; font-weight: 800; padding: 8px 18px; border-radius: var(--radius-full); cursor: pointer; box-shadow: 0 4px 12px rgba(232, 99, 122, 0.4);">
+          <span>Switch to Senior Mode (かんたん画面) ➔</span>
+        </button>
+      </div>
+
       <!-- Voice Assistant Bar -->
       <div class="voice-hero-bar" style="color: white; border-radius: 20px; padding: 18px 24px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
         <div style="display: flex; align-items: center; gap: 14px;">

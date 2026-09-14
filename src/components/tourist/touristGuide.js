@@ -44,8 +44,36 @@ export function renderTouristView(activeTab = "places", filterCity = "all", sele
           </div>
         </div>
 
+        <!-- Tourist Voice Hero Bar -->
+        <div class="senior-voice-hero" style="margin-top: 18px; margin-bottom: 6px; padding: 18px 24px; background: rgba(255, 255, 255, 0.98);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <button class="senior-hero-mic" id="btn-tourist-voice-mic" style="width: 60px; height: 60px; font-size: 26px;" title="Tap to speak in Tourist Mode">
+                <span>🎤</span>
+              </button>
+              <div>
+                <div style="font-size: 17px; font-weight: 800; color: #1E293B;">
+                  Tourist Voice Assistant (旅行音声ガイド)
+                </div>
+                <div style="font-size: 13px; color: #64748B;">
+                  Try saying: <em>"I need a wheelchair-accessible taxi"</em> or <em>"Where is the nearest hospital?"</em>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="voice-quick-chip" data-tourist-voice="wheelchair_taxi">
+                <span>🗣 "I need a wheelchair-accessible taxi"</span>
+              </button>
+              <button class="voice-quick-chip" data-tourist-voice="nearest_hospital">
+                <span>🗣 "Nearest English hospital"</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Sub Navigation Pills -->
-        <div style="display: flex; gap: 8px; margin-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.15); padding-top: 16px; overflow-x: auto;">
+        <div style="display: flex; gap: 8px; margin-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.15); padding-top: 14px; overflow-x: auto;">
           <button class="tab-pill ${activeTab === "places" ? "active" : ""}" data-tourist-tab="places">
             Accessible Places
           </button>
@@ -439,9 +467,15 @@ function renderTransitScreen() {
           </div>
         </div>
 
-        <button class="btn-touch-primary" id="btn-request-ud-taxi-demo" style="width: 100%; height: 42px; min-height: 42px; font-size: 14px;">
-          <span>Request Assisted Taxi Service</span>
-        </button>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn-touch-primary" id="btn-show-taxi-to-driver" style="width: 100%; height: 52px; min-height: 52px; font-size: 16px; font-weight: 800; background: linear-gradient(135deg, #4F46B8, #3730A3); box-shadow: 0 6px 20px rgba(79, 70, 184, 0.4);">
+            <span>🇯🇵 Show to Driver (運転手に見せる)</span>
+          </button>
+
+          <button class="btn-secondary" id="btn-request-ud-taxi-demo" style="width: 100%; height: 42px; font-size: 14px; background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #1E293B; border-radius: var(--radius-md); cursor: pointer; font-weight: 700;">
+            <span>Simulate JPN TAXI Dispatch</span>
+          </button>
+        </div>
       </div>
 
       <div class="elderly-card" style="background: rgba(255, 255, 255, 0.92); color: var(--text-main);">

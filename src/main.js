@@ -10,6 +10,7 @@ import { renderCaregiverView } from "./components/caregiver/caregiverScreens.js"
 import { renderDoctorView } from "./components/doctor/doctorScreens.js";
 import { renderAdminView } from "./components/admin/adminScreens.js";
 import { renderTouristView } from "./components/tourist/touristGuide.js";
+import { renderSeniorMode } from "./components/patient/seniorMode.js";
 import {
   renderDemoRunnerModal,
   executeScenario
@@ -27,6 +28,13 @@ import confetti from "canvas-confetti";
 // Application State
 const appState = {
   currentRole: "patient", // 'patient', 'caregiver', 'doctor', 'admin', 'tourist'
+  patientMode: "senior", // 'senior' (default for elderly users) or 'standard'
+  seniorScreen: "home", // 'home', 'medicine', 'health', 'emergency'
+  voiceFeedback: {
+    state: "idle", // 'idle', 'listening', 'heard', 'confirmed'
+    heardText: "",
+    actionText: ""
+  },
   tabs: {
     patient: "home",
     caregiver: "dashboard",
@@ -58,7 +66,7 @@ const appEl = document.getElementById("app");
 function renderApp() {
   if (!appEl) return;
 
-  const { currentRole, tabs, demoModal, dbModal, isAudioMuted, touristState } = appState;
+  const { currentRole, tabs, demoModal, dbModal, isAudioMuted, touristState, patientMode, seniorScreen, voiceFeedback } = appState;
   const currentTab = tabs[currentRole];
 
   appEl.innerHTML = `
@@ -67,7 +75,9 @@ function renderApp() {
     <main class="main-content">
       ${
         currentRole === "patient"
-          ? renderPatientView(currentTab)
+          ? (patientMode === "senior"
+              ? renderSeniorMode(seniorScreen, voiceFeedback)
+              : renderPatientView(currentTab))
           : currentRole === "caregiver"
           ? renderCaregiverView(currentTab)
           : currentRole === "doctor"
@@ -85,8 +95,378 @@ function renderApp() {
   attachEventListeners();
 }
 
+// Voice Command Intent Engine for Senior Mode
+function handleSeniorVoiceCommand(rawTranscript) {
+  if (!rawTranscript) return;
+  const text = rawTranscript.trim();
+  const lower = text.toLowerCase();
+
+  // Show heard state immediately
+  appState.voiceFeedback = {
+    state: "heard",
+    heardText: text,
+    actionText: ""
+  };
+  renderApp();
+
+  setTimeout(() => {
+    // 1. "Did I take my medicine?"
+    if (lower.includes("did i take") || lower.includes("have i taken") || lower.includes("medication status") || lower.includes("did_i_take_meds")) {
+      const meds = store.get("medications", (m) => m.patient_id === "pat_takeshi");
+      const morningMeds = meds.filter((m) => m.times_per_day.includes("08:00"));
+      const allTaken = morningMeds.length > 0 && morningMeds.every((m) => m.today_status === "taken");
+
+      if (allTaken) {
+        appState.voiceFeedback = {
+          state: "confirmed",
+          heardText: text,
+          actionText: "Morning medicine is already recorded as taken."
+        };
+        soundService.playSuccessChime();
+        soundService.speak("Takeshi-san, your morning medicine is already recorded as taken. You are all set.", "en-US");
+      } else {
+        appState.voiceFeedback = {
+          state: "confirmed",
+          heardText: text,
+          actionText: "Morning medicine not recorded yet."
+        };
+        soundService.playReminderChime();
+        soundService.speak("You have not recorded your morning medicine yet. You have Amlodipine 5 milligrams and Metformin 500 milligrams scheduled.", "en-US");
+      }
+      renderApp();
+    }
+    // 2. "I took my medicine" / "I took it"
+    else if (lower.includes("took my medicine") || lower.includes("took it") || lower.includes("took medicine") || lower.includes("took pills") || lower.includes("i_took_medicine")) {
+      store.update("medications", "med_amlodipine", { today_status: "taken", last_taken: new Date().toISOString() });
+      store.update("medications", "med_metformin", { today_status: "taken", last_taken: new Date().toISOString() });
+      appState.voiceFeedback = {
+        state: "confirmed",
+        heardText: text,
+        actionText: "Morning medicine recorded"
+      };
+      soundService.playSuccessChime();
+      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      soundService.speak("Your morning medicine has been recorded. Well done, Takeshi-san.", "en-US");
+      renderApp();
+    }
+    // 3. "Show my blood pressure" / "Read my health information"
+    else if (lower.includes("blood pressure") || lower.includes("bp") || lower.includes("my health") || lower.includes("vitals") || lower.includes("show_bp")) {
+      appState.seniorScreen = "health";
+      appState.voiceFeedback = {
+        state: "confirmed",
+        heardText: text,
+        actionText: "Showing Blood Pressure: 138/88 mmHg"
+      };
+      renderApp();
+      soundService.playSuccessChime();
+      soundService.speak("Takeshi-san, your latest blood pressure is 138 over 88 with pulse 72. That is in your safe target range.", "en-US");
+    }
+    // 4. "I feel chest pain" / "Chest pain" / "Emergency" / "I feel dizzy"
+    else if (lower.includes("chest pain") || lower.includes("chest") || lower.includes("heart") || lower.includes("dizzy") || lower.includes("emergency") || lower.includes("need help")) {
+      appState.seniorScreen = "emergency";
+      appState.voiceFeedback = {
+        state: "confirmed",
+        heardText: text,
+        actionText: "Emergency detected: Chest pain reported"
+      };
+      renderApp();
+      runWorkflowEmergencySymptomDetection("Severe chest pain and tightness");
+    }
+    // 5. "Call my caregiver" / "Call Yuki"
+    else if (lower.includes("caregiver") || lower.includes("call yuki") || lower.includes("call_caregiver")) {
+      soundService.playReminderChime();
+      soundService.speak("Connecting call to your daughter Yuki Sato in Hirosaki.", "en-US");
+      alert("📞 [CONNECTING CALL]\n\nCalling Primary Caregiver: Yuki Sato (+81 90-4412-9901)...");
+    }
+    // 6. "Repeat that"
+    else if (lower.includes("repeat") || lower.includes("again")) {
+      soundService.repeatLastSpoken();
+    }
+    // 7. "Go back" / "Back to home"
+    else if (lower.includes("back") || lower.includes("home")) {
+      appState.seniorScreen = "home";
+      appState.voiceFeedback = {
+        state: "confirmed",
+        heardText: text,
+        actionText: "Returned to Senior Home Screen"
+      };
+      renderApp();
+      soundService.speak("Returned to home screen. How can I help you?", "en-US");
+    }
+    else {
+      appState.voiceFeedback = {
+        state: "confirmed",
+        heardText: text,
+        actionText: `Recognized: "${text}"`
+      };
+      renderApp();
+      soundService.speak(`I heard: ${text}. You can say: 'Did I take my medicine?', 'Show my blood pressure', or 'I feel chest pain'.`, "en-US");
+    }
+  }, 350);
+}
+
 // Global Event Handler Attachments
 function attachEventListeners() {
+  // 0. Senior Mode Toggles & Action Buttons
+  const btnSwitchStandard = document.getElementById("btn-switch-to-standard-mode");
+  if (btnSwitchStandard) {
+    btnSwitchStandard.addEventListener("click", () => {
+      appState.patientMode = "standard";
+      renderApp();
+    });
+  }
+
+  const btnSwitchSenior = document.getElementById("btn-switch-to-senior-mode");
+  if (btnSwitchSenior) {
+    btnSwitchSenior.addEventListener("click", () => {
+      appState.patientMode = "senior";
+      appState.seniorScreen = "home";
+      renderApp();
+    });
+  }
+
+  // Senior Big 4 Action Buttons
+  const seniorBtnMeds = document.getElementById("senior-btn-meds");
+  if (seniorBtnMeds) {
+    seniorBtnMeds.addEventListener("click", () => {
+      appState.seniorScreen = "medicine";
+      renderApp();
+    });
+  }
+
+  const seniorBtnHealth = document.getElementById("senior-btn-health");
+  if (seniorBtnHealth) {
+    seniorBtnHealth.addEventListener("click", () => {
+      appState.seniorScreen = "health";
+      renderApp();
+    });
+  }
+
+  const seniorBtnSpeak = document.getElementById("senior-btn-speak");
+  if (seniorBtnSpeak) {
+    seniorBtnSpeak.addEventListener("click", () => {
+      soundService.playReminderChime();
+      soundService.speak("I am listening. Ask: 'Did I take my medicine?' or 'Show my blood pressure'.", "en-US");
+      appState.voiceFeedback = {
+        state: "listening",
+        heardText: "",
+        actionText: ""
+      };
+      renderApp();
+    });
+  }
+
+  const seniorBtnSos = document.getElementById("senior-btn-sos");
+  if (seniorBtnSos) {
+    seniorBtnSos.addEventListener("click", () => {
+      appState.seniorScreen = "emergency";
+      appState.voiceFeedback = {
+        state: "confirmed",
+        heardText: "Emergency button tapped",
+        actionText: "Emergency detected: Chest pain reported"
+      };
+      renderApp();
+      runWorkflowEmergencySymptomDetection("Severe chest pain and tightness");
+    });
+  }
+
+  // Senior Screen Navigation & Tools
+  const btnSeniorBack = document.getElementById("btn-senior-back-home");
+  if (btnSeniorBack) {
+    btnSeniorBack.addEventListener("click", () => {
+      appState.seniorScreen = "home";
+      renderApp();
+    });
+  }
+
+  const gestureBackHome = document.getElementById("gesture-back-home");
+  if (gestureBackHome) {
+    gestureBackHome.addEventListener("click", () => {
+      appState.seniorScreen = "home";
+      renderApp();
+    });
+  }
+
+  const gestureNeedHelp = document.getElementById("gesture-need-help");
+  if (gestureNeedHelp) {
+    gestureNeedHelp.addEventListener("click", () => {
+      appState.seniorScreen = "emergency";
+      renderApp();
+      runWorkflowEmergencySymptomDetection("Severe chest pain and tightness");
+    });
+  }
+
+  const gestureConfirmMed = document.getElementById("gesture-confirm-med");
+  if (gestureConfirmMed) {
+    gestureConfirmMed.addEventListener("click", () => {
+      handleSeniorVoiceCommand("I took my medicine");
+    });
+  }
+
+  // Senior "Read Screen" / Accessibility Buttons
+  const btnSeniorReadScreen = document.getElementById("btn-senior-read-screen");
+  if (btnSeniorReadScreen) {
+    btnSeniorReadScreen.addEventListener("click", () => {
+      if (appState.seniorScreen === "home") {
+        soundService.speak("Good morning, Takeshi. How can I help you today? You have four options: Medicine, My Health, Speak to Me, and Emergency.", "en-US");
+      } else if (appState.seniorScreen === "medicine") {
+        soundService.speak("Your Medicine Screen. Amlodipine 5 milligrams for blood pressure, and Metformin 500 milligrams for blood sugar scheduled at 8 AM. Tap the big green button to confirm you took them.", "en-US");
+      } else if (appState.seniorScreen === "health") {
+        soundService.speak("Your Health Information. Latest blood pressure is 138 over 88 with pulse 72. In target range. Caregiver Yuki Sato is on duty.", "en-US");
+      } else {
+        soundService.speak("Emergency Detected Screen. 119 emergency workflow prototype initiated. Caregiver Yuki Sato and Dr. Tanaka are notified.", "en-US");
+      }
+    });
+  }
+
+  const btnSeniorRepeat = document.getElementById("btn-senior-repeat-speech");
+  if (btnSeniorRepeat) {
+    btnSeniorRepeat.addEventListener("click", () => {
+      soundService.repeatLastSpoken();
+    });
+  }
+
+  // Senior Medicine Screen Actions
+  const btnReadMedScreen = document.getElementById("btn-read-med-screen");
+  if (btnReadMedScreen) {
+    btnReadMedScreen.addEventListener("click", () => {
+      soundService.speak("Amlodipine 5 milligrams for blood pressure, and Metformin 500 milligrams for blood sugar. Please take with a glass of water.", "en-US");
+    });
+  }
+
+  const btnSeniorConfirmMeds = document.getElementById("btn-senior-confirm-meds");
+  if (btnSeniorConfirmMeds) {
+    btnSeniorConfirmMeds.addEventListener("click", () => {
+      handleSeniorVoiceCommand("I took my medicine");
+    });
+  }
+
+  const btnSeniorSpeakMedInfo = document.getElementById("btn-senior-speak-med-info");
+  if (btnSeniorSpeakMedInfo) {
+    btnSeniorSpeakMedInfo.addEventListener("click", () => {
+      soundService.speak("Dosage schedule: Take 1 tablet of Amlodipine 5 milligrams and 1 tablet of Metformin 500 milligrams in the morning with water.", "en-US");
+    });
+  }
+
+  // Senior Health Screen Actions
+  const btnReadHealthScreen = document.getElementById("btn-read-health-screen");
+  if (btnReadHealthScreen) {
+    btnReadHealthScreen.addEventListener("click", () => {
+      soundService.speak("Blood pressure 138 over 88 mmHg. Pulse 72. Dr. Tanaka advises staying hydrated and enjoying your gentle morning walk.", "en-US");
+    });
+  }
+
+  const btnSeniorReadBp = document.getElementById("btn-senior-read-bp-aloud");
+  if (btnSeniorReadBp) {
+    btnSeniorReadBp.addEventListener("click", () => {
+      soundService.speak("Your latest blood pressure is 138 over 88 with pulse 72. That is in your safe target range.", "en-US");
+    });
+  }
+
+  const btnSeniorCallCaregiverVoice = document.getElementById("btn-senior-call-caregiver-voice");
+  if (btnSeniorCallCaregiverVoice) {
+    btnSeniorCallCaregiverVoice.addEventListener("click", () => {
+      handleSeniorVoiceCommand("Call my caregiver");
+    });
+  }
+
+  const btnSeniorCallCaregiverEmerg = document.getElementById("btn-senior-call-caregiver-emergency");
+  if (btnSeniorCallCaregiverEmerg) {
+    btnSeniorCallCaregiverEmerg.addEventListener("click", () => {
+      handleSeniorVoiceCommand("Call my caregiver");
+    });
+  }
+
+  const btnSeniorReadParamedic = document.getElementById("btn-senior-read-paramedic-summary");
+  if (btnSeniorReadParamedic) {
+    btnSeniorReadParamedic.addEventListener("click", () => {
+      const summaryJa = "救急隊員の方へ。患者は佐藤健78歳です。本態性高血圧症と2型糖尿病の持病があります。ペニシリンアレルギーがあります。主介護者は長女の佐藤由紀です。";
+      soundService.speak(summaryJa, "ja-JP");
+    });
+  }
+
+  // Hero Microphone Button
+  const btnSeniorHeroMic = document.getElementById("btn-senior-hero-mic");
+  if (btnSeniorHeroMic) {
+    btnSeniorHeroMic.addEventListener("click", () => {
+      soundService.playReminderChime();
+      appState.voiceFeedback = {
+        state: "listening",
+        heardText: "",
+        actionText: ""
+      };
+      renderApp();
+
+      const recog = soundService.startSpeechRecognition(
+        (transcript) => {
+          handleSeniorVoiceCommand(transcript);
+        },
+        (status) => {
+          if (status === "unsupported" || status === "error") {
+            // Friendly prompt if browser mic access is denied or unsupported
+            soundService.speak("I am listening. What can I do for you?", "en-US");
+          }
+        }
+      );
+
+      if (!recog) {
+        soundService.speak("I am listening. What can I do for you?", "en-US");
+      }
+    });
+  }
+
+  // Quick Demo Command Chips
+  document.querySelectorAll("[data-speak-cmd]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const cmd = chip.dataset.speakCmd;
+      if (cmd === "did_i_take_meds") {
+        handleSeniorVoiceCommand("Did I take my medicine?");
+      } else if (cmd === "i_took_medicine") {
+        handleSeniorVoiceCommand("I took my medicine");
+      } else if (cmd === "show_bp") {
+        handleSeniorVoiceCommand("Show my blood pressure");
+      } else if (cmd === "chest_pain") {
+        handleSeniorVoiceCommand("I feel chest pain");
+      } else if (cmd === "call_caregiver") {
+        handleSeniorVoiceCommand("Call my caregiver");
+      }
+    });
+  });
+
+  // Tourist Mode Voice Enhancements
+  const btnTouristMic = document.getElementById("btn-tourist-voice-mic");
+  if (btnTouristMic) {
+    btnTouristMic.addEventListener("click", () => {
+      soundService.playReminderChime();
+      soundService.speak("Tourist Voice Assistant active. You can say: 'I need a wheelchair accessible taxi' or 'Where is the nearest hospital?'", "en-US");
+    });
+  }
+
+  document.querySelectorAll("[data-tourist-voice]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const type = btn.dataset.touristVoice;
+      if (type === "wheelchair_taxi") {
+        appState.tabs.tourist = "transport";
+        renderApp();
+        soundService.playReminderChime();
+        soundService.speak("Opening Universal Design Taxi guidance. You can show this card directly to your driver.", "en-US");
+      } else if (type === "nearest_hospital") {
+        appState.tabs.tourist = "emergency";
+        renderApp();
+        soundService.speak("Showing international accredited emergency hospitals nearby.", "en-US");
+      }
+    });
+  });
+
+  const btnShowTaxiToDriver = document.getElementById("btn-show-taxi-to-driver");
+  if (btnShowTaxiToDriver) {
+    btnShowTaxiToDriver.addEventListener("click", () => {
+      const taxiJa = "乗り降りがしやすいユニバーサルデザインタクシー（JPN TAXI）を手配していただけますか？車椅子の利用または足腰のサポートが必要です。";
+      soundService.speak(taxiJa, "ja-JP");
+      alert(`🚖 [JAPAN TAXI DRIVER CARD / 運転手に見せる画面]\n\n「${taxiJa}」\n\nMeaning: "Could you please arrange a wheelchair-accessible Universal Design JPN TAXI with low step?"`);
+    });
+  }
+
   // 1. Role Switching
   document.querySelectorAll(".role-btn").forEach((btn) => {
     btn.addEventListener("click", () => {

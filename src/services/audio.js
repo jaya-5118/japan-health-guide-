@@ -122,15 +122,86 @@ class SoundService {
   speak(text, lang = "en-US") {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     try {
+      this.lastSpokenText = text;
+      this.lastSpokenLang = lang;
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
-      utterance.rate = 0.95; // slightly slower for elderly clarity
+      utterance.rate = 0.92; // deliberate, gentle tempo for elderly clarity
       utterance.pitch = 1.0;
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.warn("Speech synthesis error:", e);
     }
+  }
+
+  repeatLastSpoken() {
+    if (this.lastSpokenText) {
+      this.speak(this.lastSpokenText, this.lastSpokenLang || "en-US");
+    } else {
+      this.speak("There is nothing to repeat right now.", "en-US");
+    }
+  }
+
+  // --- Voice Input / Speech Recognition Engine ---
+  startSpeechRecognition(onResult, onStatusChange) {
+    const SpeechRecognition = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SpeechRecognition) {
+      console.warn("Speech recognition not natively supported in this browser environment.");
+      if (onStatusChange) onStatusChange("unsupported");
+      return null;
+    }
+
+    try {
+      if (this.activeRecognition) {
+        this.activeRecognition.abort();
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        this.isRecognizing = true;
+        if (onStatusChange) onStatusChange("listening");
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (onResult) onResult(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.warn("Speech recognition error:", event.error);
+        if (onStatusChange) onStatusChange("error", event.error);
+      };
+
+      recognition.onend = () => {
+        this.isRecognizing = false;
+        if (onStatusChange) onStatusChange("idle");
+      };
+
+      recognition.start();
+      this.activeRecognition = recognition;
+      return recognition;
+    } catch (err) {
+      console.warn("Failed to start speech recognition:", err);
+      if (onStatusChange) onStatusChange("error", err);
+      return null;
+    }
+  }
+
+  stopSpeechRecognition() {
+    if (this.activeRecognition) {
+      try {
+        this.activeRecognition.stop();
+      } catch (e) {
+        // ignore
+      }
+      this.activeRecognition = null;
+    }
+    this.isRecognizing = false;
   }
 }
 

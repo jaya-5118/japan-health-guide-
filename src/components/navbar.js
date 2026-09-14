@@ -15,7 +15,7 @@ export function renderNavbar(activeRole, isAudioMuted = false) {
         <div class="brand-logo">🌸</div>
         <div class="brand-text">
           <h1>MediConnect Japan</h1>
-          <div class="brand-subtitle">AI-Powered Elderly Care Ecosystem • 遠隔医療基盤</div>
+          <div class="brand-subtitle">Healthcare shouldn't become inaccessible simply because someone cannot type.</div>
         </div>
       </div>
 

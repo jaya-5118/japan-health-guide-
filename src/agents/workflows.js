@@ -108,7 +108,7 @@ export function runWorkflowEmergencySymptomDetection(symptomText, locationCoords
 
   if (isRedEmergency) {
     soundService.playEmergencyAlarm();
-    soundService.speak("Emergency protocol activated. Caregiver and emergency 119 services are being contacted.", "en-US");
+    soundService.speak("Predefined emergency symptom detected. 119 emergency workflow prototype initiated. Caregiver and clinic doctor are being notified.", "en-US");
 
     // Create Caregiver High-Priority Alert
     store.insert("alerts", {
@@ -116,9 +116,9 @@ export function runWorkflowEmergencySymptomDetection(symptomText, locationCoords
       recipient_role: "caregiver",
       type: "emergency_red",
       priority: "critical",
-      title: `🚨 EMERGENCY: ${pat.name} reported severe chest pain!`,
-      title_jp: `🚨 緊急: 佐藤健様が激しい胸の痛みを訴えています！`,
-      message: `Location: ${pat.address} (GPS: ${locationCoords.lat}, ${locationCoords.lng}). Automated 119 protocol triggered. Tap to contact immediately.`,
+      title: `🚨 EMERGENCY PROTOCOL: ${pat.name} reported severe chest pain!`,
+      title_jp: `🚨 緊急プロトコル: 佐藤健様が激しい胸の痛みを訴えています！`,
+      message: `Location: ${pat.address} (GPS: ${locationCoords.lat}, ${locationCoords.lng}). Predefined emergency symptom detected. 119 emergency workflow prototype triggered. Designed for future 119 integration.`,
       is_read: false,
       requires_action: true,
       action_type: "call_119",
